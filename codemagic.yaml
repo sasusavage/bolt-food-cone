@@ -1,0 +1,40 @@
+workflows:
+  android-and-ios:
+    name: Campus Eats - Android & iOS
+    max_build_duration: 60
+    working_directory: campus_eats_app
+
+    environment:
+      flutter: 3.38.9
+      xcode: latest
+      cocoapods: default
+
+    scripts:
+      - name: Install Flutter dependencies
+        script: flutter pub get
+
+      - name: Build Android APK (debug — no signing needed)
+        script: flutter build apk --debug
+
+      - name: Build iOS (no codesign — for testing)
+        script: |
+          flutter build ios --release --no-codesign
+
+      - name: Create IPA manually
+        script: |
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/Runner.app
+          zip -r ../../../Campus_Eats.ipa Payload
+
+    artifacts:
+      - campus_eats_app/build/app/outputs/flutter-apk/app-debug.apk
+      - campus_eats_app/Campus_Eats.ipa
+
+    publishing:
+      email:
+        recipients:
+          - sasuisaac332@gmail.com
+        notify:
+          success: true
+          failure: true
