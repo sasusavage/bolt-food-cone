@@ -1,0 +1,39 @@
+workflows:
+  ios-release:
+    name: Campus Eats iOS
+    max_build_duration: 60
+    environment:
+      flutter: 3.38.9
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: "com.campuseats.vvu"
+      ios_signing:
+        distribution_type: app_store  # change to 'ad_hoc' for direct iPhone install without App Store
+        bundle_identifier: com.campuseats.vvu
+
+    scripts:
+      - name: Set Flutter version
+        script: flutter --version
+
+      - name: Install dependencies
+        script: |
+          cd campus_eats_app
+          flutter pub get
+
+      - name: Build iOS
+        script: |
+          cd campus_eats_app
+          flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - campus_eats_app/build/ios/ipa/*.ipa
+
+    publishing:
+      email:
+        recipients:
+          - your@email.com
+        notify:
+          success: true
+          failure: true

@@ -1,6 +1,6 @@
 class AppConstants {
   // Replace with your Coolify domain
-  static const String baseUrl = 'https://api.campuseats.vvu.edu.gh';
+  static const String baseUrl = 'https://app.sasulabs.me';
 
   // TomTom API Key — get free key at developer.tomtom.com
   static const String tomTomApiKey = 'YOUR_TOMTOM_API_KEY';
