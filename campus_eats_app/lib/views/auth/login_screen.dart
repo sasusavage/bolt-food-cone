@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodels/auth_viewmodel.dart';
+import '../admin/admin_screen.dart';
 import '../home/home_screen.dart';
 import 'register_screen.dart';
 
@@ -69,7 +70,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (_) => const HomeScreen()));
+                                    builder: (_) => vm.isAdmin
+                                        ? const AdminScreen()
+                                        : const HomeScreen()));
                           }
                         },
                   child: vm.state == AuthState.loading

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import 'admin/admin_screen.dart';
 import 'auth/login_screen.dart';
 import 'home/home_screen.dart';
 
@@ -25,8 +26,9 @@ class _SplashScreenState extends State<SplashScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            authVm.isAuthenticated ? const HomeScreen() : const LoginScreen(),
+        builder: (_) => authVm.isAuthenticated
+            ? (authVm.isAdmin ? const AdminScreen() : const HomeScreen())
+            : const LoginScreen(),
       ),
     );
   }
