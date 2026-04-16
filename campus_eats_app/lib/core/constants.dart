@@ -3,7 +3,7 @@ class AppConstants {
   static const String baseUrl = 'https://app.sasulabs.me';
 
   // TomTom API Key — get free key at developer.tomtom.com
-  static const String tomTomApiKey = 'YOUR_TOMTOM_API_KEY';
+  static const String tomTomApiKey = 'h9pcb6ywH3MY2yDB89cPfaa4wpHTzeu2';
 
   // VVU Campus center coordinates (Oyibi, Ghana)
   static const double campusLat = 5.8960;
