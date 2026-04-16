@@ -21,7 +21,14 @@ class OrderService {
 
   Future<List<OrderModel>> getMyOrders() async {
     final data = await ApiClient.get('/api/orders/my-orders');
-    final list = data is List ? data : (data as Map)['orders'] as List? ?? [];
+    List list;
+    if (data is List) {
+      list = data;
+    } else if (data is Map && data['orders'] != null) {
+      list = data['orders'] as List;
+    } else {
+      list = [];
+    }
     return list
         .map((e) => OrderModel.fromJson(e as Map<String, dynamic>))
         .toList();
