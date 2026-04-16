@@ -34,6 +34,14 @@ class CampusEatsApp extends StatelessWidget {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFE65100)),
           useMaterial3: true,
+          // Remove white surface tint overlay on iOS
+          cardTheme: const CardThemeData(surfaceTintColor: Colors.transparent),
+          appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
+          navigationBarTheme: const NavigationBarThemeData(
+              surfaceTintColor: Colors.transparent),
+          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+              backgroundColor: Colors.white),
+          scaffoldBackgroundColor: const Color(0xFFF5F5F5),
         ),
         home: const SplashScreen(),
         debugShowCheckedModeBanner: false,
