@@ -20,7 +20,7 @@ def place_order():
         "notes": "Extra spicy"
     }
     """
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     data = request.get_json()
 
     cart_items = data.get('items', [])
@@ -102,7 +102,7 @@ def place_order():
 @orders_bp.route('/my-orders', methods=['GET'])
 @jwt_required()
 def my_orders():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     orders = Order.query.filter_by(user_id=user_id).order_by(Order.created_at.desc()).all()
     return jsonify([o.to_dict() for o in orders]), 200
 
@@ -110,6 +110,6 @@ def my_orders():
 @orders_bp.route('/<int:order_id>', methods=['GET'])
 @jwt_required()
 def get_order(order_id):
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     order = Order.query.filter_by(id=order_id, user_id=user_id).first_or_404()
     return jsonify(order.to_dict()), 200
