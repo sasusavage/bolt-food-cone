@@ -38,10 +38,12 @@ def create_app():
     from app.routes.menu import menu_bp
     from app.routes.orders import orders_bp
     from app.routes.admin import admin_bp
+    from app.routes.location import location_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(menu_bp, url_prefix='/api/menu')
     app.register_blueprint(orders_bp, url_prefix='/api/orders')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(location_bp, url_prefix='/api/location')
 
     return app

@@ -90,7 +90,7 @@ class _HeroHeader extends StatelessWidget {
     return SliverAppBar(
       pinned: false,
       floating: false,
-      expandedHeight: 200,
+      expandedHeight: 230,
       backgroundColor: AppColors.primary,
       automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
@@ -105,7 +105,7 @@ class _HeroHeader extends StatelessWidget {
           child: SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 48),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,

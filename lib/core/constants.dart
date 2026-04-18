@@ -1,11 +1,8 @@
 class AppConstants {
-  // Replace with your Coolify domain
   static const String baseUrl = 'https://app.sasulabs.me';
 
-  // TomTom API Key — get free key at developer.tomtom.com
-  static const String tomTomApiKey = 'YOUR_TOMTOM_API_KEY';
-
-  // VVU Campus center coordinates (Oyibi, Ghana)
+  // VVU Campus center coordinates (Oyibi, Ghana). Only used for
+  // UI fallbacks; the backend owns the real search bias now.
   static const double campusLat = 5.8960;
   static const double campusLng = -0.0940;
 
