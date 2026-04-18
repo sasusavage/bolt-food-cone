@@ -18,7 +18,12 @@ def search():
       LOCATION_RADIUS_M    optional, default 20000
       LOCATION_COUNTRY     optional, default GH
     """
-    api_key = os.environ.get('TOMTOM_API_KEY')
+    # Default key is baked in so no Coolify setup is required.
+    # Override by setting TOMTOM_API_KEY in the environment.
+    api_key = os.environ.get(
+        'TOMTOM_API_KEY',
+        'h9pcb6ywH3MY2yDB89cPfaa4wpHTzeu2',
+    )
     if not api_key:
         return jsonify({'error': 'Location search not configured'}), 503
 
