@@ -1,6 +1,9 @@
 class OrderModel {
   final int id;
   final int userId;
+  final String? userName;
+  final String? userEmail;
+  final String? userPhone;
   final String status;
   final double totalAmount;
   final String? deliveryAddress;
@@ -13,6 +16,9 @@ class OrderModel {
   OrderModel({
     required this.id,
     required this.userId,
+    this.userName,
+    this.userEmail,
+    this.userPhone,
     required this.status,
     required this.totalAmount,
     this.deliveryAddress,
@@ -26,6 +32,9 @@ class OrderModel {
   factory OrderModel.fromJson(Map<String, dynamic> json) => OrderModel(
         id: json['id'],
         userId: json['user_id'],
+        userName: json['user_name'],
+        userEmail: json['user_email'],
+        userPhone: json['user_phone'],
         status: json['status'],
         totalAmount: (json['total_amount'] as num).toDouble(),
         deliveryAddress: json['delivery_address'],

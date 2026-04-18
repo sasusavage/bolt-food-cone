@@ -32,6 +32,9 @@ class MenuViewModel extends ChangeNotifier {
     } on ApiException catch (e) {
       errorMessage = e.message;
       state = MenuState.error;
+    } catch (e) {
+      errorMessage = e.toString();
+      state = MenuState.error;
     } finally {
       notifyListeners();
     }

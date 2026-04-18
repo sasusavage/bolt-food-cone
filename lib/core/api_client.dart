@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -33,12 +34,18 @@ class ApiClient {
     return headers;
   }
 
+  static const Duration _timeout = Duration(seconds: 20);
+
   static Future<dynamic> get(String path) async {
-    final response = await http.get(
-      Uri.parse('${AppConstants.baseUrl}$path'),
-      headers: await _headers(),
-    );
-    return _handleResponse(response);
+    return _run(() async {
+      final response = await http
+          .get(
+            Uri.parse('${AppConstants.baseUrl}$path'),
+            headers: await _headers(),
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    });
   }
 
   static Future<Map<String, dynamic>> post(
@@ -46,24 +53,44 @@ class ApiClient {
     Map<String, dynamic> body, {
     bool auth = true,
   }) async {
-    final response = await http.post(
-      Uri.parse('${AppConstants.baseUrl}$path'),
-      headers: await _headers(auth: auth),
-      body: jsonEncode(body),
-    );
-    return _handleResponse(response) as Map<String, dynamic>;
+    return _run(() async {
+      final response = await http
+          .post(
+            Uri.parse('${AppConstants.baseUrl}$path'),
+            headers: await _headers(auth: auth),
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
+      return _handleResponse(response) as Map<String, dynamic>;
+    });
   }
 
   static Future<Map<String, dynamic>> patch(
     String path,
     Map<String, dynamic> body,
   ) async {
-    final response = await http.patch(
-      Uri.parse('${AppConstants.baseUrl}$path'),
-      headers: await _headers(),
-      body: jsonEncode(body),
-    );
-    return _handleResponse(response) as Map<String, dynamic>;
+    return _run(() async {
+      final response = await http
+          .patch(
+            Uri.parse('${AppConstants.baseUrl}$path'),
+            headers: await _headers(),
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
+      return _handleResponse(response) as Map<String, dynamic>;
+    });
+  }
+
+  static Future<dynamic> delete(String path) async {
+    return _run(() async {
+      final response = await http
+          .delete(
+            Uri.parse('${AppConstants.baseUrl}$path'),
+            headers: await _headers(),
+          )
+          .timeout(_timeout);
+      return _handleResponse(response);
+    });
   }
 
   /// Multipart POST for image uploads (admin menu management)
@@ -73,31 +100,62 @@ class ApiClient {
     File? imageFile,
     String imageField = 'image',
   }) async {
-    final token = await _getToken();
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('${AppConstants.baseUrl}$path'),
-    );
-    if (token != null) {
-      request.headers['Authorization'] = 'Bearer $token';
-    }
-    request.fields.addAll(fields);
-    if (imageFile != null) {
-      request.files.add(
-        await http.MultipartFile.fromPath(imageField, imageFile.path),
+    return _run(() async {
+      final token = await _getToken();
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${AppConstants.baseUrl}$path'),
       );
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      request.fields.addAll(fields);
+      if (imageFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(imageField, imageFile.path),
+        );
+      }
+      final streamed = await request.send().timeout(_timeout);
+      final response = await http.Response.fromStream(streamed);
+      return _handleResponse(response) as Map<String, dynamic>;
+    });
+  }
+
+  static Future<T> _run<T>(Future<T> Function() body) async {
+    try {
+      return await body();
+    } on ApiException {
+      rethrow;
+    } on SocketException catch (e) {
+      throw ApiException('No internet connection (${e.osError?.message ?? e.message})');
+    } on HandshakeException {
+      throw ApiException('Secure connection to server failed');
+    } on http.ClientException catch (e) {
+      throw ApiException('Network error: ${e.message}');
+    } on TimeoutException {
+      throw ApiException('Server took too long to respond');
+    } on FormatException {
+      throw ApiException('Server returned an invalid response');
+    } catch (e) {
+      throw ApiException('Unexpected error: $e');
     }
-    final streamed = await request.send();
-    final response = await http.Response.fromStream(streamed);
-    return _handleResponse(response) as Map<String, dynamic>;
   }
 
   static dynamic _handleResponse(http.Response response) {
-    final decoded = jsonDecode(response.body);
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } on FormatException {
+      throw ApiException(
+        'Unexpected server response (HTTP ${response.statusCode})',
+        statusCode: response.statusCode,
+      );
+    }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return decoded;
     }
-    final message = (decoded is Map ? decoded['error'] : null) ?? 'Something went wrong';
-    throw ApiException(message, statusCode: response.statusCode);
+    final message = (decoded is Map ? (decoded['error'] ?? decoded['msg']) : null)
+        ?? 'Something went wrong';
+    throw ApiException(message.toString(), statusCode: response.statusCode);
   }
 }

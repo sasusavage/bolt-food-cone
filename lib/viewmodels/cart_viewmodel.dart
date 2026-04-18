@@ -45,6 +45,20 @@ class CartViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Increments quantity of an existing cart entry by menuItemId.
+  /// Used by the cart screen's + button.
+  void incrementItem(int menuItemId) {
+    for (final key in _cartBox.keys) {
+      final item = _cartBox.get(key);
+      if (item?.menuItemId == menuItemId) {
+        item!.quantity += 1;
+        item.save();
+        break;
+      }
+    }
+    notifyListeners();
+  }
+
   void decrementItem(int menuItemId) {
     for (final key in _cartBox.keys) {
       final item = _cartBox.get(key);

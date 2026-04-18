@@ -26,6 +26,9 @@ class AuthViewModel extends ChangeNotifier {
     } on ApiException catch (e) {
       errorMessage = e.message;
       state = AuthState.error;
+    } catch (e) {
+      errorMessage = e.toString();
+      state = AuthState.error;
     } finally {
       notifyListeners();
     }
@@ -47,6 +50,9 @@ class AuthViewModel extends ChangeNotifier {
       state = AuthState.authenticated;
     } on ApiException catch (e) {
       errorMessage = e.message;
+      state = AuthState.error;
+    } catch (e) {
+      errorMessage = e.toString();
       state = AuthState.error;
     } finally {
       notifyListeners();

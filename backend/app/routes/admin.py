@@ -1,8 +1,10 @@
 import os
 import uuid
+from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
+from sqlalchemy import func
 from app import db
-from app.models import MenuItem, Order, User
+from app.models import MenuItem, Order, OrderItem, User
 from app.decorators import admin_required
 from werkzeug.utils import secure_filename
 
@@ -101,7 +103,7 @@ def delete_menu_item(item_id):
 @admin_required
 def all_orders():
     orders = Order.query.order_by(Order.created_at.desc()).all()
-    return jsonify([o.to_dict() for o in orders]), 200
+    return jsonify([o.to_dict(include_user=True) for o in orders]), 200
 
 
 @admin_bp.route('/orders/<int:order_id>/status', methods=['PATCH'])
@@ -115,11 +117,128 @@ def update_order_status(order_id):
         return jsonify({'error': f'Invalid status. Must be one of: {valid_statuses}'}), 400
     order.status = new_status
     db.session.commit()
-    return jsonify(order.to_dict()), 200
+    return jsonify(order.to_dict(include_user=True)), 200
 
 
 @admin_bp.route('/users', methods=['GET'])
 @admin_required
 def list_users():
-    users = User.query.all()
-    return jsonify([u.to_dict() for u in users]), 200
+    users = User.query.order_by(User.created_at.desc().nullslast()).all()
+    order_counts = dict(
+        db.session.query(Order.user_id, func.count(Order.id))
+        .group_by(Order.user_id)
+        .all()
+    )
+    out = []
+    for u in users:
+        d = u.to_dict()
+        d['order_count'] = order_counts.get(u.id, 0)
+        d['created_at'] = u.created_at.isoformat() if u.created_at else None
+        out.append(d)
+    return jsonify(out), 200
+
+
+@admin_bp.route('/stats', methods=['GET'])
+@admin_required
+def stats():
+    now = datetime.utcnow()
+    start_of_day = datetime(now.year, now.month, now.day)
+    week_ago = now - timedelta(days=7)
+
+    orders_today = (
+        Order.query.filter(Order.created_at >= start_of_day).count()
+    )
+    orders_week = (
+        Order.query.filter(Order.created_at >= week_ago).count()
+    )
+    revenue_today = (
+        db.session.query(func.coalesce(func.sum(Order.total_amount), 0))
+        .filter(Order.created_at >= start_of_day)
+        .filter(Order.status != 'cancelled')
+        .scalar()
+    )
+    revenue_week = (
+        db.session.query(func.coalesce(func.sum(Order.total_amount), 0))
+        .filter(Order.created_at >= week_ago)
+        .filter(Order.status != 'cancelled')
+        .scalar()
+    )
+    pending_orders = Order.query.filter(
+        Order.status.in_(['pending', 'confirmed', 'preparing', 'out_for_delivery'])
+    ).count()
+    total_users = User.query.count()
+    total_items = MenuItem.query.count()
+    out_of_stock = MenuItem.query.filter(MenuItem.stock <= 0).count()
+
+    popular_rows = (
+        db.session.query(
+            MenuItem.id,
+            MenuItem.name,
+            func.coalesce(func.sum(OrderItem.quantity), 0).label('qty'),
+        )
+        .outerjoin(OrderItem, OrderItem.menu_item_id == MenuItem.id)
+        .outerjoin(Order, Order.id == OrderItem.order_id)
+        .filter((Order.created_at == None) | (Order.created_at >= week_ago))  # noqa
+        .group_by(MenuItem.id, MenuItem.name)
+        .order_by(func.sum(OrderItem.quantity).desc().nullslast())
+        .limit(5)
+        .all()
+    )
+    popular = [
+        {'id': r.id, 'name': r.name, 'sold': int(r.qty or 0)}
+        for r in popular_rows
+    ]
+
+    status_rows = (
+        db.session.query(Order.status, func.count(Order.id))
+        .group_by(Order.status)
+        .all()
+    )
+    status_breakdown = {s: c for s, c in status_rows}
+
+    return jsonify({
+        'orders_today': orders_today,
+        'orders_week': orders_week,
+        'revenue_today': float(revenue_today or 0),
+        'revenue_week': float(revenue_week or 0),
+        'pending_orders': pending_orders,
+        'total_users': total_users,
+        'total_items': total_items,
+        'out_of_stock': out_of_stock,
+        'popular_items': popular,
+        'status_breakdown': status_breakdown,
+    }), 200
+
+
+@admin_bp.route('/categories', methods=['GET'])
+@admin_required
+def list_categories():
+    rows = (
+        db.session.query(
+            MenuItem.category,
+            func.count(MenuItem.id),
+        )
+        .group_by(MenuItem.category)
+        .order_by(MenuItem.category)
+        .all()
+    )
+    return jsonify([
+        {'name': name, 'item_count': count}
+        for name, count in rows
+    ]), 200
+
+
+@admin_bp.route('/categories/rename', methods=['POST'])
+@admin_required
+def rename_category():
+    data = request.get_json() or {}
+    old_name = (data.get('old') or '').strip()
+    new_name = (data.get('new') or '').strip()
+    if not old_name or not new_name:
+        return jsonify({'error': 'old and new category names are required'}), 400
+    updated = (
+        MenuItem.query.filter(MenuItem.category == old_name)
+        .update({MenuItem.category: new_name}, synchronize_session=False)
+    )
+    db.session.commit()
+    return jsonify({'updated': updated, 'old': old_name, 'new': new_name}), 200

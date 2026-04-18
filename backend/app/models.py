@@ -77,8 +77,8 @@ class Order(db.Model):
 
     items = db.relationship('OrderItem', backref='order', lazy=True)
 
-    def to_dict(self):
-        return {
+    def to_dict(self, include_user=False):
+        d = {
             'id': self.id,
             'user_id': self.user_id,
             'status': self.status,
@@ -91,6 +91,11 @@ class Order(db.Model):
             'updated_at': self.updated_at.isoformat(),
             'items': [item.to_dict() for item in self.items],
         }
+        if include_user and self.user:
+            d['user_name'] = self.user.name
+            d['user_email'] = self.user.email
+            d['user_phone'] = self.user.phone
+        return d
 
 
 class OrderItem(db.Model):

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'models/cart_item.dart';
+import 'theme/app_theme.dart';
 import 'viewmodels/auth_viewmodel.dart';
 import 'viewmodels/cart_viewmodel.dart';
 import 'viewmodels/menu_viewmodel.dart';
@@ -31,10 +32,7 @@ class CampusEatsApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Campus Eats',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFE65100)),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.light(),
         home: const SplashScreen(),
         debugShowCheckedModeBanner: false,
       ),
